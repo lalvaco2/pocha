@@ -257,6 +257,22 @@ summary::before{content:'⚙ '}
 .stp button{width:34px;height:34px;border-radius:10px;border:1.5px solid var(--borde);background:transparent;color:var(--fg);font:inherit;font-weight:700;font-size:18px;line-height:1;cursor:pointer}
 .stp button:disabled{opacity:.35;cursor:not-allowed}
 .stp output{min-width:30px;text-align:center;font-weight:700;font-size:16px;font-variant-numeric:tabular-nums}
+.esprow{border:1.5px solid var(--borde);border-radius:12px;padding:9px 10px;margin-bottom:8px}
+.esphead{display:flex;align-items:center;gap:8px}
+.esphead .nm{flex:1;font-weight:700;font-size:14.5px;display:flex;align-items:center;gap:6px}
+.esphead .del{width:30px;height:30px;border-radius:9px;border:1.5px solid var(--borde);background:transparent;color:var(--copas);font:inherit;font-size:16px;cursor:pointer}
+.espctl{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;flex-wrap:wrap}
+.espctl .stp output{min-width:62px;font-size:15px}
+.espctl .stp output .mini{display:inline;margin-left:4px;font-size:11.5px;font-weight:600;color:var(--fg-mute)}
+.seg.xs{flex:0 0 auto}
+.seg.xs button{padding:7px 13px;font-size:13px}
+.espadd{display:flex;flex-wrap:wrap;gap:6px}
+.espadd button{padding:7px 10px;border-radius:999px;border:1.5px dashed var(--borde);background:transparent;color:var(--fg);font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px}
+.espadd .palo-ico svg,.esphead .palo-ico svg{width:15px;height:15px;vertical-align:-2px}
+.especial{margin-top:9px;padding:10px 13px;border-radius:12px;border:1.5px solid var(--oro);background:color-mix(in srgb, var(--oro) 12%, transparent)}
+.especial b{display:block;color:var(--oro);font-size:14.5px}
+.especial span{display:block;font-size:12.5px;color:var(--fg-mute)}
+td .mini.esp{color:var(--oro)}
 .presets{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
 .presets button{flex:1;min-width:130px;padding:9px 8px;border-radius:10px;border:1.5px solid var(--borde);background:transparent;color:var(--fg);font:inherit;font-size:12.5px;font-weight:700;cursor:pointer}
 .presets button.on{background:var(--acento);color:var(--acento-fg);border-color:var(--acento)}
@@ -326,6 +342,23 @@ function construirRondas(n, modo){
 function puntos(apuesta, bazas, cfg){
   if (apuesta === bazas) return cfg.base + cfg.porApuesta * apuesta;
   return cfg.falloFijo ? -cfg.penal : -cfg.penal * Math.abs(apuesta - bazas);
+}
+
+// Rondas especiales: manos extra al final, con regla propia y multiplicador.
+const ESPECIALES = {
+  oros:    { nm:'A oros',    pinta:'oros',    desc:'Pintan oros toda la mano' },
+  copas:   { nm:'A copas',   pinta:'copas',   desc:'Pintan copas toda la mano' },
+  espadas: { nm:'A espadas', pinta:'espadas', desc:'Pintan espadas toda la mano' },
+  bastos:  { nm:'A bastos',  pinta:'bastos',  desc:'Pintan bastos toda la mano' },
+  sin:     { nm:'Sin pinta', pinta:'sin',     desc:'No hay triunfo' },
+  ciega:   { nm:'A ciegas',  pinta:null,      desc:'Se canta sin mirar las cartas' }
+};
+const MAX_ESPECIALES = 10;
+
+// En una ronda especial manda su multiplicador; si no, oros puede valer doble.
+function multiplicador(esp, pinta, cfg){
+  if (esp) return esp.x || 1;
+  return (cfg.orosDoble && pinta === 'oros') ? 2 : 1;
 }
 
 // Orden de anuncio: empieza el siguiente al repartidor; el repartidor cierra.
@@ -422,6 +455,12 @@ P.crudo.pinta  = ["Pinta <b>{palo}</b>. El que no lleve triunfo que se vaya prep
 P.blanco.sorteo = ["El azar dice que reparte <b>{j}</b>.","Le toca a <b>{j}</b>. Sin discusión."];
 P.guasa.sorteo  = ["Reparte <b>{j}</b>. Lo ha dicho el destino, no yo.","<b>{j}</b> a barajar. Que nadie se queje.","El dado ha hablado: <b>{j}</b>."];
 P.crudo.sorteo  = ["Reparte <b>{j}</b>. Y el que proteste, que baraje él.","<b>{j}</b> a barajar, que para eso le ha tocado.","Lo dice el azar: <b>{j}</b>. A callar y repartir."];
+P.blanco.especial = ["Ronda especial <b>{r}</b>{x}. Aquí se decide la partida.","Llega la ronda <b>{r}</b>{x}. Ojo, que esto cambia la tabla."];
+P.guasa.especial  = ["Ronda <b>{r}</b>{x}. Los que van detrás, este es vuestro momento.","Llega la ronda <b>{r}</b>{x}. El líder empieza a sudar.","Ronda <b>{r}</b>{x}. Nadie está a salvo."];
+P.crudo.especial  = ["Ronda <b>{r}</b>{x}. Ahora sí que duele cagarla.","Ronda <b>{r}</b>{x}. Aquí se ve quién tiene cuajo y quién solo boca."];
+P.blanco.ciega = ["A ciegas: nadie mira sus cartas hasta cantar{x}.","Mano a ciegas{x}. Hoy canta la intuición."];
+P.guasa.ciega  = ["A ciegas{x}. El que mire, paga la cena.","Mano a ciegas{x}. Por fin todos al mismo nivel."];
+P.crudo.ciega  = ["A ciegas{x}. Total, con cartas tampoco acertáis.","A ciegas{x}. Que nadie haga trampas, que os conozco."];
 P.blanco.sinPinta = ["Mano sin triunfo. Manda el palo de salida y poco más."];
 P.guasa.sinPinta  = ["Sin pinta. Aquí no salva nadie a nadie."];
 P.crudo.sinPinta  = ["Sin pinta. A pelo y sin red, como debe ser."];
@@ -581,16 +620,20 @@ const Store = (() => {
 /* =========================================================
    4. ESTADO
    ========================================================= */
-const CFG_DEF = { base:10, porApuesta:3, penal:3, falloFijo:true, exceptuarUno:false, nivel:'crudo', modo:'completa', primerDealer:0 };
+const CFG_DEF = { base:10, porApuesta:3, penal:3, falloFijo:true, exceptuarUno:false, especiales:[], orosDoble:false, nivel:'crudo', modo:'completa', primerDealer:0 };
 const VARIANTES = [
   { nm:'10 + 3 · −3 fijo',       base:10, porApuesta:3, penal:3, falloFijo:true },
   { nm:'10 + 5 · −5 por baza',   base:10, porApuesta:5, penal:5, falloFijo:false }
 ];
 const LS_REGLAS = 'pocha:reglas';
-const REGLAS_KEYS = ['base', 'porApuesta', 'penal', 'falloFijo', 'exceptuarUno'];
+const REGLAS_KEYS = ['base', 'porApuesta', 'penal', 'falloFijo', 'exceptuarUno', 'especiales', 'orosDoble'];
 function reglasGuardadas(){
-  try { const r = JSON.parse(localStorage.getItem(LS_REGLAS) || 'null'); return r && typeof r === 'object' ? r : {}; }
-  catch { return {}; }
+  try {
+    const r = JSON.parse(localStorage.getItem(LS_REGLAS) || 'null');
+    if (!r || typeof r !== 'object') return {};
+    r.especiales = Array.isArray(r.especiales) ? r.especiales.filter(e => e && ESPECIALES[e.tipo]).slice(0, MAX_ESPECIALES) : [];
+    return r;
+  } catch { return {}; }
 }
 function guardarReglas(cfg){
   try { localStorage.setItem(LS_REGLAS, JSON.stringify(Object.fromEntries(REGLAS_KEYS.map(k => [k, cfg[k]])))); } catch {}
@@ -600,12 +643,14 @@ const uid = () => 'p' + Date.now().toString(36) + Math.random().toString(36).sli
 const $ = s => document.querySelector(s);
 
 function nuevaPartida(nombres, lugar, fecha, cfg){
-  const n = nombres.length;
+  const n = nombres.length, max = maxCartas(n), base = construirRondas(n, cfg.modo);
+  const esp = (cfg.especiales || []).map(e => ({ tipo:e.tipo, x:e.x || 1, cartas:Math.min(e.cartas || max, max) }));
   return {
     id: uid(), rev: 1, creada: new Date().toISOString(),
     lugar, fecha, cfg,
     jugadores: nombres,
-    rondas: construirRondas(n, cfg.modo),
+    rondas: base.concat(esp.map(e => e.cartas)),
+    especiales: base.map(() => null).concat(esp.map(e => ({ tipo:e.tipo, x:e.x }))),
     manoIdx: 0, fase: 'apuestas', dealer: cfg.primerDealer || 0, pinta: null,
     apuestas: [], bazas: [], manos: [], terminada: false
   };
@@ -614,6 +659,13 @@ const totales = p => p.jugadores.map((_, i) => p.manos.reduce((a, m) => a + m.pu
 const dealerDe = p => (p.dealer ?? (p.manoIdx % p.jugadores.length)) % p.jugadores.length;
 const saleDe = p => (dealerDe(p) + 1) % p.jugadores.length;
 const cartasDe = p => p.rondas[p.manoIdx];
+const especialDe = p => (p.especiales && p.especiales[p.manoIdx]) || null;
+const txtX = x => x > 1 ? ' (×' + x + ')' : '';
+function pullaEspecial(p){
+  const e = especialDe(p); if (!e) return '';
+  return e.tipo === 'ciega' ? pulla('ciega', p.cfg.nivel, { x:txtX(e.x) })
+                            : pulla('especial', p.cfg.nivel, { r:ESPECIALES[e.tipo].nm.toLowerCase(), x:txtX(e.x) });
+}
 
 function guardar(){ if (!S.partida) return; S.partida.rev++; Store.guardar(S.partida); }
 
@@ -837,7 +889,8 @@ function vNueva(v, fb, fi){
   const b = S.borrador || (S.borrador = {
     nombres:['', '', '', ''], lugar:'', fecha:new Date().toISOString().slice(0, 10), cfg:{ ...CFG_DEF, ...reglasGuardadas() }
   });
-  const n = b.nombres.length, max = maxCartas(n), rondas = construirRondas(n, b.cfg.modo).length;
+  const n = b.nombres.length, max = maxCartas(n), esps = b.cfg.especiales || [];
+  const rondas = construirRondas(n, b.cfg.modo).length + esps.length;
   v.innerHTML = `
     <div class="card">
       <h2 class="sec">Jugadores</h2>
@@ -866,6 +919,29 @@ function vNueva(v, fb, fi){
       <div class="seg">
         <button data-modo="completa" class="${b.cfg.modo === 'completa' ? 'on' : ''}">Completa (sube y baja)</button>
         <button data-modo="corta" class="${b.cfg.modo === 'corta' ? 'on' : ''}">Corta (solo sube)</button>
+      </div>
+      <label class="lab">Rondas especiales al final</label>
+      <p class="sub">Manos extra con regla propia después de la última normal. Cada una puede valer el doble o el triple.</p>
+      ${esps.map((e, i) => {
+        const c = Math.min(e.cartas || max, max);
+        return `<div class="esprow">
+        <div class="esphead">
+          <div class="nm">${ESPECIALES[e.tipo].pinta ? icoPalo(ESPECIALES[e.tipo].pinta) : '🙈'} ${ESPECIALES[e.tipo].nm}</div>
+          <button class="del" data-edel="${i}" aria-label="Quitar ronda">×</button>
+        </div>
+        <div class="espctl">
+          <div class="stp">
+            <button data-ecart="${i}" data-delta="-1" ${c <= 1 ? 'disabled' : ''} aria-label="Menos cartas">−</button>
+            <output>${c}<span class="mini">${c === 1 ? 'carta' : 'cartas'}</span></output>
+            <button data-ecart="${i}" data-delta="1" ${c >= max ? 'disabled' : ''} aria-label="Más cartas">+</button>
+          </div>
+          <div class="seg xs">${[1, 2, 3].map(x => `<button data-ex="${i}" data-x="${x}" class="${(e.x || 1) === x ? 'on' : ''}">×${x}</button>`).join('')}</div>
+        </div></div>`; }).join('')}
+      ${esps.length < MAX_ESPECIALES ? `<div class="espadd">${Object.entries(ESPECIALES).map(([k, x]) =>
+        `<button data-eadd="${k}">+ ${x.pinta ? icoPalo(x.pinta) : '🙈'} ${x.nm}</button>`).join('')}</div>` : ''}
+      <div class="switch" style="margin-top:6px">
+        <div class="t"><b>Oros vale doble</b><span>En las manos normales, si pintan oros los puntos se multiplican por 2. Hay que apuntar la pinta.</span></div>
+        <button class="tgl ${b.cfg.orosDoble ? 'on' : ''}" id="tOros"></button>
       </div>
       <label class="lab">Nivel de las pullas</label>
       <div class="seg">
@@ -933,6 +1009,16 @@ function vNueva(v, fb, fi){
     const k = el.dataset.stp, min = k === 'base' ? 1 : 0;
     b.cfg[k] = Math.min(50, Math.max(min, b.cfg[k] + +el.dataset.delta)); render();
   });
+  const setEsp = f => { b.cfg.especiales = f((b.cfg.especiales || []).map(e => ({ ...e }))); render(); };
+  v.querySelectorAll('[data-eadd]').forEach(el => el.onclick = () =>
+    setEsp(a => a.concat({ tipo:el.dataset.eadd, x:1, cartas:null }).slice(0, MAX_ESPECIALES)));
+  v.querySelectorAll('[data-edel]').forEach(el => el.onclick = () => setEsp(a => a.filter((_, i) => i !== +el.dataset.edel)));
+  v.querySelectorAll('[data-ex]').forEach(el => el.onclick = () => setEsp(a => { a[+el.dataset.ex].x = +el.dataset.x; return a; }));
+  v.querySelectorAll('[data-ecart]').forEach(el => el.onclick = () => setEsp(a => {
+    const e = a[+el.dataset.ecart], c = Math.min(e.cartas || max, max) + +el.dataset.delta;
+    e.cartas = c >= max ? null : Math.max(1, c); return a;
+  }));
+  $('#tOros').onclick = () => { b.cfg.orosDoble = !b.cfg.orosDoble; render(); };
   v.querySelectorAll('[data-var]').forEach(el => el.onclick = () => {
     const { nm, ...r } = VARIANTES[+el.dataset.var]; Object.assign(b.cfg, r); render();
   });
@@ -969,6 +1055,9 @@ function abrirPartida(){
 function vJuego(v, fb, fi){
   const p = S.partida, n = p.jugadores.length, cartas = cartasDe(p), dealer = dealerDe(p);
   const t = totales(p), mx = Math.max(...t);
+  const esp = especialDe(p), fija = esp ? ESPECIALES[esp.tipo].pinta : null;
+  if (fija && p.pinta !== fija) p.pinta = fija;
+  const mult = multiplicador(esp, p.pinta, p.cfg);
   $('#subtitulo').textContent = `Mano ${p.manoIdx + 1} de ${p.rondas.length}`;
 
   const marcador = `<div class="score">${p.jugadores.map((nm, i) => {
@@ -985,13 +1074,15 @@ function vJuego(v, fb, fi){
       <span>Reparte ${esc(p.jugadores[dealer])} · sale ${esc(p.jugadores[sale])}${p.pinta ? ' · pinta ' + icoPalo(p.pinta) + ' ' + PALOS[p.pinta].nm.toLowerCase() : ''}</span></div>
       <button class="sw" id="bSw" title="Corregir quién reparte">⇄</button>
     </div>
+    ${esp ? `<div class="especial"><b>★ ${ESPECIALES[esp.tipo].nm}${mult > 1 ? ' · ×' + mult : ''}</b><span>${ESPECIALES[esp.tipo].desc}${mult > 1 ? '. Todos los puntos de esta mano se multiplican por ' + mult : ''}.</span></div>`
+          : (mult > 1 ? `<div class="especial"><b>Oros · ×${mult}</b><span>Pintan oros: esta mano vale doble.</span></div>` : '')}
     ${S.editDealer ? `<div class="card" style="margin-top:9px"><h2 class="sec">¿Quién reparte esta mano?</h2>
       <p class="sub">Solo si se ha desordenado el reparto en la mesa. Sale el siguiente por la derecha.</p>
       <div class="dealsel">${p.jugadores.map((nm, i) => `<button data-deal="${i}" class="${i === dealer ? 'on' : ''}">${esc(nm)}</button>`).join('')}</div>
     </div>` : ''}`;
 
   v.innerHTML = marcador + barra +
-    (p.fase === 'apuestas' ? bloquePinta(p) + bloqueApuestas(p, cartas, dealer) : bloqueBazas(p, cartas)) +
+    (p.fase === 'apuestas' ? (fija ? '' : bloquePinta(p)) + bloqueApuestas(p, cartas, dealer) : bloqueBazas(p, cartas)) +
     (S.pullas.length ? `<div class="pullas-stack">${S.pullas.map(x => `<div class="pulla">${x}</div>`).join('')}</div>` : '');
 
   const sw = $('#bSw'); if (sw) sw.onclick = () => { S.editDealer = !S.editDealer; render(); };
@@ -1116,9 +1207,11 @@ function bloqueBazas(p, cartas){
 function cerrarMano(){
   const p = S.partida, n = p.jugadores.length, cartas = cartasDe(p);
   const antes = totales(p), ordAntes = ranking(antes);
-  const pts = p.jugadores.map((_, i) => puntos(p.apuestas[i], p.bazas[i], p.cfg));
+  const esp = especialDe(p), mult = multiplicador(esp, p.pinta, p.cfg);
+  const pts = p.jugadores.map((_, i) => puntos(p.apuestas[i], p.bazas[i], p.cfg) * mult || 0);
   p.manos.push({ cartas, dealer:dealerDe(p), sale:saleDe(p), pinta:p.pinta || null,
-                 apuestas:p.apuestas.slice(), bazas:p.bazas.slice(), puntos:pts });
+                 apuestas:p.apuestas.slice(), bazas:p.bazas.slice(), puntos:pts,
+                 ...(esp ? { esp:esp.tipo } : {}), ...(mult > 1 ? { mult } : {}) });
 
   const t = totales(p), ordAhora = ranking(t), niv = p.cfg.nivel;
   const ps = [];
@@ -1146,6 +1239,7 @@ function cerrarMano(){
   p.manoIdx++; p.apuestas = []; p.bazas = []; p.fase = 'apuestas';
   p.dealer = (dealerDe(p) + 1) % n; p.pinta = null; S.editDealer = false;
   if (p.manoIdx >= p.rondas.length){ p.terminada = true; p.cerrada = new Date().toISOString(); guardar(); ir('final'); return; }
+  const pe = pullaEspecial(p); if (pe) S.pullas = [pe].concat(S.pullas.slice(0, 3));
   guardar(); render();
 }
 function racha(p, i){
@@ -1205,7 +1299,8 @@ function tablaManos(p){
   const filas = p.manos.map((m, k) => {
     const c = m.puntos.map((x, i) => { acum[i] += x; return `<td class="${m.apuestas[i] === m.bazas[i] ? 'hit' : 'miss'}">${m.apuestas[i]}/${m.bazas[i]} <span style="opacity:.6">${acum[i]}</span></td>`; }).join('');
     const ini = (m.sale !== undefined && p.jugadores[m.sale]) ? 'sale ' + esc(p.jugadores[m.sale]) : '';
-    return `<tr><td>${m.cartas} 🂠 ${m.pinta ? icoPalo(m.pinta) : ''}<span class="mini">${ini}</span></td>${c}</tr>`;
+    const extra = [m.esp ? '★ ' + ESPECIALES[m.esp].nm.toLowerCase() : '', m.mult > 1 ? '×' + m.mult : ''].filter(Boolean).join(' ');
+    return `<tr><td>${m.cartas} 🂠 ${m.pinta ? icoPalo(m.pinta) : ''}${extra ? `<span class="mini esp">${extra}</span>` : ''}<span class="mini">${ini}</span></td>${c}</tr>`;
   }).join('');
   return `<div class="card"><h2 class="sec">Mano a mano</h2>
     <p class="sub">Apostadas / ganadas, con el acumulado al lado.</p>

@@ -91,9 +91,14 @@ icons/                  iconos de la app (192, 512, maskable, apple-touch)
 - **Apuestas**: en orden real de anuncio, empezando por el de la derecha del repartidor.
   El repartidor cierra y no puede cantar el número que cuadraría la suma con las bazas
   en juego, de modo que siempre falla alguien.
-- **Puntuación**: acertar da 10 puntos más 3 por cada baza apostada; fallar resta 3.
-  Ambas cifras y el modo de penalización (fija o por baza de diferencia) son
-  configurables al crear la partida.
+- **Puntuación**: por defecto, acertar da 10 puntos más 3 por cada baza apostada y
+  fallar resta 3. Las tres cifras y el modo de penalización (fija o por baza de
+  diferencia) se ajustan al crear la partida, con atajos para 10+3/−3 fijo y
+  10+5/−5 por baza. La variante elegida se recuerda en el dispositivo.
+- **Rondas especiales**: manos extra al final de la partida (a oros, copas, espadas o
+  bastos, sin pinta, o a ciegas), cada una con su número de cartas y un multiplicador
+  ×1, ×2 o ×3. Opcionalmente, en las manos normales oros vale doble si se apunta la
+  pinta.
 - **Control de errores**: no se puede cerrar una mano si las bazas ganadas no suman
   exactamente el número de cartas repartidas.
 - **Registro por mano**: cartas, palo que pinta, quién reparte, quién sale, apuestas,
