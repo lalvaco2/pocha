@@ -1,6 +1,6 @@
 /* La Pocha — service worker
    Sube VERSION en cada despliegue para que los móviles recojan los cambios. */
-const VERSION = 'pocha-v1';
+const VERSION = 'pocha-v2';
 const ARCHIVOS = [
   './',
   './index.html',

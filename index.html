@@ -253,6 +253,13 @@ summary::before{content:'⚙ '}
 .seg{display:flex;gap:0;border:1.5px solid var(--borde);border-radius:12px;overflow:hidden}
 .seg button{flex:1;padding:11px 6px;border:0;background:transparent;color:var(--fg);font:inherit;font-weight:700;font-size:13.5px;cursor:pointer}
 .seg button.on{background:var(--acento);color:var(--acento-fg)}
+.stp{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+.stp button{width:34px;height:34px;border-radius:10px;border:1.5px solid var(--borde);background:transparent;color:var(--fg);font:inherit;font-weight:700;font-size:18px;line-height:1;cursor:pointer}
+.stp button:disabled{opacity:.35;cursor:not-allowed}
+.stp output{min-width:30px;text-align:center;font-weight:700;font-size:16px;font-variant-numeric:tabular-nums}
+.presets{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.presets button{flex:1;min-width:130px;padding:9px 8px;border-radius:10px;border:1.5px solid var(--borde);background:transparent;color:var(--fg);font:inherit;font-size:12.5px;font-weight:700;cursor:pointer}
+.presets button.on{background:var(--acento);color:var(--acento-fg);border-color:var(--acento)}
 .vacio{text-align:center;color:var(--fg-mute);padding:26px 10px;font-size:14.5px}
 
 /* ---------- palos ---------- */
@@ -575,6 +582,19 @@ const Store = (() => {
    4. ESTADO
    ========================================================= */
 const CFG_DEF = { base:10, porApuesta:3, penal:3, falloFijo:true, exceptuarUno:false, nivel:'crudo', modo:'completa', primerDealer:0 };
+const VARIANTES = [
+  { nm:'10 + 3 · −3 fijo',       base:10, porApuesta:3, penal:3, falloFijo:true },
+  { nm:'10 + 5 · −5 por baza',   base:10, porApuesta:5, penal:5, falloFijo:false }
+];
+const LS_REGLAS = 'pocha:reglas';
+const REGLAS_KEYS = ['base', 'porApuesta', 'penal', 'falloFijo', 'exceptuarUno'];
+function reglasGuardadas(){
+  try { const r = JSON.parse(localStorage.getItem(LS_REGLAS) || 'null'); return r && typeof r === 'object' ? r : {}; }
+  catch { return {}; }
+}
+function guardarReglas(cfg){
+  try { localStorage.setItem(LS_REGLAS, JSON.stringify(Object.fromEntries(REGLAS_KEYS.map(k => [k, cfg[k]])))); } catch {}
+}
 let S = { vista:'inicio', partida:null, borrador:null, historial:[], detalle:null, desuscribir:null, pullas:[] };
 const uid = () => 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const $ = s => document.querySelector(s);
@@ -815,7 +835,7 @@ function fila(p){
 /* ---------- nueva ---------- */
 function vNueva(v, fb, fi){
   const b = S.borrador || (S.borrador = {
-    nombres:['', '', '', ''], lugar:'', fecha:new Date().toISOString().slice(0, 10), cfg:{ ...CFG_DEF }
+    nombres:['', '', '', ''], lugar:'', fecha:new Date().toISOString().slice(0, 10), cfg:{ ...CFG_DEF, ...reglasGuardadas() }
   });
   const n = b.nombres.length, max = maxCartas(n), rondas = construirRondas(n, b.cfg.modo).length;
   v.innerHTML = `
@@ -853,9 +873,22 @@ function vNueva(v, fb, fi){
         <button data-niv="guasa" class="${b.cfg.nivel === 'guasa' ? 'on' : ''}">Con guasa</button>
         <button data-niv="crudo" class="${b.cfg.nivel === 'crudo' ? 'on' : ''}">Sin filtro</button>
       </div>
-      <details>
+      <details id="dReglas" ${S.reglasAbiertas ? 'open' : ''}>
         <summary>Puntuación y reglas finas</summary>
-        <div class="switch" style="margin-top:10px">
+        <div class="presets">
+          ${VARIANTES.map((x, i) => `<button data-var="${i}" class="${['base', 'porApuesta', 'penal', 'falloFijo'].every(k => x[k] === b.cfg[k]) ? 'on' : ''}">${x.nm}</button>`).join('')}
+        </div>
+        ${[['base', 'Por acertar', 'Puntos fijos al clavar la apuesta'],
+           ['porApuesta', 'Por cada baza apostada', 'Se suman al acertar'],
+           ['penal', 'Por fallar', b.cfg.falloFijo ? 'Se restan una vez' : 'Se restan por cada baza de diferencia']
+          ].map(([k, t, d]) => `<div class="switch">
+          <div class="t"><b>${t}</b><span>${d}</span></div>
+          <div class="stp">
+            <button data-stp="${k}" data-delta="-1" ${b.cfg[k] <= (k === 'base' ? 1 : 0) ? 'disabled' : ''} aria-label="Menos">−</button>
+            <output>${k === 'penal' ? '−' : ''}${b.cfg[k]}</output>
+            <button data-stp="${k}" data-delta="1" ${b.cfg[k] >= 50 ? 'disabled' : ''} aria-label="Más">+</button>
+          </div></div>`).join('')}
+        <div class="switch">
           <div class="t"><b>Fallar cuesta lo mismo siempre</b><span>${b.cfg.falloFijo ? '−' + b.cfg.penal + ' fijo, falles por poco o por mucho' : '−' + b.cfg.penal + ' por cada baza de diferencia'}</span></div>
           <button class="tgl ${b.cfg.falloFijo ? 'on' : ''}" id="tFallo"></button>
         </div>
@@ -863,7 +896,7 @@ function vNueva(v, fb, fi){
           <div class="t"><b>Manos de 1 carta sin veto</b><span>En la mano de una carta el repartidor puede cantar lo que quiera</span></div>
           <button class="tgl ${b.cfg.exceptuarUno ? 'on' : ''}" id="tUno"></button>
         </div>
-        <p class="sub" style="margin:10px 0 0">Acertar: <b>${b.cfg.base}</b> puntos + <b>${b.cfg.porApuesta}</b> por cada baza apostada.</p>
+        <p class="sub" style="margin:10px 0 0">Ejemplo: clavar 2 bazas da <b>${puntos(2, 2, b.cfg)}</b>; cantar 2 y hacer 4 da <b>${puntos(2, 4, b.cfg)}</b>. Se recuerda para la próxima partida.</p>
       </details>
     </div>`;
   v.querySelectorAll('input[data-i]').forEach(el => el.oninput = e => { b.nombres[+el.dataset.i] = e.target.value; validarAlta(); });
@@ -893,8 +926,16 @@ function vNueva(v, fb, fi){
   };
   v.querySelectorAll('[data-modo]').forEach(el => el.onclick = () => { b.cfg.modo = el.dataset.modo; render(); });
   v.querySelectorAll('[data-niv]').forEach(el => el.onclick = () => { b.cfg.nivel = el.dataset.niv; render(); });
+  $('#dReglas').ontoggle = e => { S.reglasAbiertas = e.target.open; };
   $('#tFallo').onclick = () => { b.cfg.falloFijo = !b.cfg.falloFijo; render(); };
   $('#tUno').onclick = () => { b.cfg.exceptuarUno = !b.cfg.exceptuarUno; render(); };
+  v.querySelectorAll('[data-stp]').forEach(el => el.onclick = () => {
+    const k = el.dataset.stp, min = k === 'base' ? 1 : 0;
+    b.cfg[k] = Math.min(50, Math.max(min, b.cfg[k] + +el.dataset.delta)); render();
+  });
+  v.querySelectorAll('[data-var]').forEach(el => el.onclick = () => {
+    const { nm, ...r } = VARIANTES[+el.dataset.var]; Object.assign(b.cfg, r); render();
+  });
 
   fb.classList.remove('hidden');
   fi.innerHTML = '<button class="btn" id="bEmpezar">Empezar partida</button>';
@@ -904,6 +945,7 @@ function vNueva(v, fb, fi){
     const nombres = vivos.map(i => crudos[i]);
     if (nombres.length < 3) return;
     const cfg = { ...b.cfg, primerDealer: Math.max(0, vivos.indexOf(b.cfg.primerDealer ?? 0)) };
+    guardarReglas(cfg);
     S.partida = nuevaPartida(nombres, b.lugar.trim(), b.fecha, cfg);
     S.pullas = [pulla('inicio', cfg.nivel, { j:esc(nombres[cfg.primerDealer]) })];
     guardar(); abrirPartida();
